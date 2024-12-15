@@ -13,11 +13,14 @@ import { DB } from '@database';
 import { Routes } from '@interfaces/routes.interface';
 import { ErrorMiddleware } from '@middlewares/error.middleware';
 import { logger, stream } from '@utils/logger';
+import cron from 'node-cron';
+import {CronJobService} from '@/services/cronJob.service'
 
 export class App {
   public app: express.Application;
   public env: string;
   public port: string | number;
+  public CronJobService: CronJobService;
 
   constructor(routes: Routes[]) {
     this.app = express();
@@ -38,6 +41,10 @@ export class App {
       logger.info(`🚀 App listening on the port ${this.port}`);
       logger.info(`=================================`);
     });
+
+    const cronJob = new CronJobService();
+    cronJob.StartCron();
+  
   }
 
   public getServer() {

@@ -1,34 +1,22 @@
 import { NextFunction, Request, Response } from 'express';
-import { HttpException } from '@exceptions/httpException';
-import nodemailer from 'nodemailer';
+import { HttpException } from '@/exceptions/httpException';
 import { logger } from '@utils/logger';
+import { EmailService } from '@/services/ email.service';
+import Container from 'typedi';
 
-export const ErrorMiddleware = async (error: HttpException, req: Request, res: Response, next: NextFunction) => {
+
+export const ErrorMiddleware = (error: HttpException, req: Request, res: Response, next: NextFunction) => {
+
   try {
-    const status = error.status || 500;
-    const message = error.message || 'Something went wrong';
+    const status: number = error.status || 500;
+    const message: string = error.message || 'Something went wrong';
+    const emailService = Container.get(EmailService);
 
+    emailService.SendEmailForErrorApi(req,status,message);
     logger.error(`[${req.method}] ${req.path} >> StatusCode:: ${status}, Message:: ${message}`);
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'm.salameh@hagzi.com',
-        pass: 'jjiuryjrgxbqfibs',
-      },
-    });
-
-    const mailOptions = {
-      from: 'm.salameh@hagzi.com',
-      to: 'mustafaksalameh99@gmail.com,yazan@hagzi.com',
-      subject: `Error in API: ${message}`,
-      text: `Error occurred at ${req.path}\nMethod: ${req.method}\nStatus: ${status}\nMessage: ${message}`,
-    };
-
-    await transporter.sendMail(mailOptions);
     res.status(status).json({ message });
-
-  } catch (emailError) {
-    next(emailError);
+    
+  } catch (error) {
+    next(error);
   }
 };
